@@ -1,0 +1,25 @@
+@startuml
+title Nhóm 4 - Đánh giá & Bình luận
+left to right direction
+
+actor "Khách hàng" as KH
+actor "Check-in API" as CAPI
+
+rectangle "Đánh giá & Bình luận" {
+    usecase "UC14\nXem danh sách\nđánh giá, nhận xét" as UC14
+    usecase "UC15\nViết và gửi\nđánh giá xác thực" as UC15
+    usecase "UC20\nTiếp nhận trạng thái\nNhận bàn thành công" as UC20
+}
+
+KH --> UC14
+KH --> UC15
+CAPI --> UC20
+
+note right of UC15
+Tiền điều kiện:
+Đơn đặt bàn đã có trạng thái
+"Nhận bàn thành công"
+và chưa được đánh giá.
+end note
+
+@enduml
