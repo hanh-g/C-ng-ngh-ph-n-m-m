@@ -1,0 +1,96 @@
+@startuml
+title SƠ ĐỒ USE CASE TỔNG QUAN - HỆ THỐNG ĐẶT CHỖ NHÀ HÀNG
+
+left to right direction
+skinparam packageStyle rectangle
+skinparam shadowing false
+
+actor "Khách hàng" as KH
+actor "Quản trị viên" as ADMIN
+actor "SMS Gateway" as SMS
+actor "Restaurant API" as RAPI
+actor "Check-in API" as CAPI
+
+rectangle "HỆ THỐNG ĐẶT CHỖ NHÀ HÀNG" {
+
+    package "1. Xác thực & Tài khoản" {
+        usecase "UC01\nĐăng ký tài khoản" as UC01
+        usecase "UC02\nXác thực OTP" as UC02
+        usecase "UC03\nĐăng nhập hệ thống" as UC03
+        usecase "UC04\nKhôi phục mật khẩu" as UC04
+        usecase "UC05\nQuản lý hồ sơ cá nhân" as UC05
+        usecase "UC06\nĐổi mật khẩu" as UC06
+    }
+
+    package "2. Trang chủ & Khám phá" {
+        usecase "UC09\nTìm kiếm & Khám phá\nnhà hàng" as UC09
+        usecase "UC10\nKích hoạt phiên\ngiữ chỗ 5 phút" as UC10
+        usecase "UC13\nXem chi tiết thông tin,\ntiện ích, bản đồ nhà hàng" as UC13
+    }
+
+    package "3. Đặt chỗ & Hủy đặt chỗ" {
+        usecase "UC07\nXem lịch sử đặt bàn" as UC07
+        usecase "UC08\nHủy đặt chỗ" as UC08
+        usecase "UC12\nĐiền và gửi\nForm đặt chỗ" as UC12
+    }
+
+    package "4. Đánh giá & Bình luận" {
+        usecase "UC14\nXem danh sách\nđánh giá, nhận xét" as UC14
+        usecase "UC15\nViết và gửi\nđánh giá xác thực" as UC15
+    }
+
+    package "5. Quản trị hệ thống" {
+        usecase "UC16\nQuản lý tài khoản\nngười dùng" as UC16
+        usecase "UC17\nCấu hình tham số\nhệ thống" as UC17
+        usecase "UC18\nGiám sát nhật ký\nkết nối API" as UC18
+    }
+
+    package "6. Tích hợp hệ thống ngoại vi" {
+        usecase "UC19\nĐồng bộ thông tin\nnhà hàng qua API" as UC19
+        usecase "UC20\nTiếp nhận trạng thái\nNhận bàn thành công" as UC20
+        usecase "UC21\nĐồng bộ trạng thái\nđơn hủy qua API" as UC21
+        usecase "UC22\nPhát tin nhắn OTP\nvà thông báo SMS" as UC22
+    }
+}
+
+' Khách hàng
+KH --> UC01
+KH --> UC02
+KH --> UC03
+KH --> UC04
+KH --> UC05
+KH --> UC06
+KH --> UC07
+KH --> UC08
+KH --> UC09
+KH --> UC10
+KH --> UC12
+KH --> UC13
+KH --> UC14
+KH --> UC15
+
+' Quản trị viên
+ADMIN --> UC16
+ADMIN --> UC17
+ADMIN --> UC18
+
+' Hệ thống ngoại vi
+SMS --> UC22
+RAPI --> UC19
+RAPI --> UC20
+RAPI --> UC21
+CAPI --> UC20
+
+' Quan hệ include
+UC01 ..> UC02 : <<include>>
+UC04 ..> UC02 : <<include>>
+UC02 ..> UC22 : <<include>>
+UC12 ..> UC10 : <<include>>
+UC12 ..> UC22 : <<include>>
+UC08 ..> UC21 : <<include>>
+UC08 ..> UC22 : <<include>>
+
+' Quan hệ extend
+UC08 ..> UC07 : <<extend>>
+
+@enduml
