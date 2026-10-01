@@ -1,0 +1,17 @@
+@startuml
+title Nhóm 2 - Trang chủ & Khám phá Điểm đến
+left to right direction
+
+actor "Khách hàng" as KH
+
+rectangle "Trang chủ & Khám phá Điểm đến" {
+    usecase "UC09\nTìm kiếm & Khám phá\nnhà hàng" as UC09
+    usecase "UC10\nKích hoạt phiên\ngiữ chỗ 5 phút" as UC10
+    usecase "UC13\nXem chi tiết thông tin,\ntiện ích, bản đồ nhà hàng" as UC13
+}
+
+KH --> UC09
+KH --> UC10
+KH --> UC13
+
+@enduml
