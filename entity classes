@@ -1,0 +1,471 @@
+
+-- HỆ THỐNG ĐẶT BÀN NHÀ HÀNG TRỰC TUYẾN
+-- Database phục vụ Entity / EER Diagram
+-- MySQL 8.0+
+
+DROP DATABASE IF EXISTS QuanLyDatBanNhaHang;
+
+CREATE DATABASE QuanLyDatBanNhaHang
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
+
+USE QuanLyDatBanNhaHang;
+
+-- 1. QUYỀN
+
+CREATE TABLE Quyen (
+    ID_quyen INT AUTO_INCREMENT PRIMARY KEY,
+    Ten_quyen VARCHAR(50) NOT NULL UNIQUE
+);
+
+-- 2. NGƯỜI DÙNG
+
+
+CREATE TABLE NguoiDung (
+    ID_user INT AUTO_INCREMENT PRIMARY KEY,
+
+    Ho_ten VARCHAR(100) NOT NULL,
+
+    So_dien_thoai VARCHAR(10) NOT NULL UNIQUE,
+
+    Email VARCHAR(255) NOT NULL UNIQUE,
+
+    -- Mật khẩu được lưu dưới dạng Bcrypt
+    Mat_khau VARCHAR(255) NOT NULL,
+
+    Trang_thai_user VARCHAR(30)
+        NOT NULL DEFAULT 'Hoat dong',
+
+    -- Số lần đăng nhập sai liên tiếp
+    So_lan_dang_nhap_sai INT
+        NOT NULL DEFAULT 0,
+
+    -- Thời điểm bắt đầu khóa đăng nhập
+    Thoi_diem_khoa DATETIME NULL,
+
+    Ngay_tao DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    Ngay_cap_nhat DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    ID_quyen INT NOT NULL,
+
+    CONSTRAINT FK_NguoiDung_Quyen
+        FOREIGN KEY (ID_quyen)
+        REFERENCES Quyen(ID_quyen),
+
+    CONSTRAINT CK_NguoiDung_SoLanSai
+        CHECK (So_lan_dang_nhap_sai >= 0)
+);
+
+
+-- 3. OTP
+
+
+CREATE TABLE OTP (
+    ID_otp BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    So_dien_thoai VARCHAR(10) NOT NULL,
+
+    Ma_otp VARCHAR(6) NOT NULL,
+
+    -- Dang ky / Quen mat khau
+    Loai_otp VARCHAR(30) NOT NULL,
+
+    Thoi_diem_tao DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    Thoi_diem_het_han DATETIME NOT NULL,
+
+    Da_xac_thuc BOOLEAN
+        NOT NULL DEFAULT FALSE,
+
+    -- Số lần phát sinh OTP trong ngày
+    So_lan_gui_trong_ngay INT
+        NOT NULL DEFAULT 1,
+
+    CONSTRAINT CK_OTP_Ma
+        CHECK (CHAR_LENGTH(Ma_otp) = 6),
+
+    CONSTRAINT CK_OTP_SoLanGui
+        CHECK (So_lan_gui_trong_ngay BETWEEN 1 AND 3)
+);
+
+
+-- 4. NHÀ HÀNG
+
+
+CREATE TABLE NhaHang (
+    ID_nha_hang INT AUTO_INCREMENT PRIMARY KEY,
+
+    Ten_nha_hang VARCHAR(150) NOT NULL,
+
+    Dia_chi VARCHAR(255) NOT NULL,
+
+    Quan_huyen VARCHAR(100) NOT NULL,
+
+    Mo_ta TEXT NULL,
+
+    Gia_thap_nhat DECIMAL(15,2) NULL,
+
+    Gia_cao_nhat DECIMAL(15,2) NULL,
+
+    Phan_tram_giam DECIMAL(5,2)
+        NOT NULL DEFAULT 0,
+
+    Vi_do DECIMAL(10,7) NULL,
+
+    Kinh_do DECIMAL(10,7) NULL,
+
+    Trang_thai VARCHAR(30)
+        NOT NULL DEFAULT 'Hoat dong',
+
+    Ngay_dong_bo DATETIME NULL,
+
+    CONSTRAINT CK_NhaHang_Gia
+        CHECK (
+            Gia_thap_nhat IS NULL
+            OR Gia_cao_nhat IS NULL
+            OR Gia_cao_nhat >= Gia_thap_nhat
+        ),
+
+    CONSTRAINT CK_NhaHang_Giam
+        CHECK (Phan_tram_giam BETWEEN 0 AND 100)
+);
+
+
+-- 5. BANNER
+
+
+CREATE TABLE Banner (
+    ID_banner INT AUTO_INCREMENT PRIMARY KEY,
+
+    ID_nha_hang INT NOT NULL,
+
+    Tieu_de VARCHAR(200) NOT NULL,
+
+    Hinh_anh_url VARCHAR(500) NOT NULL,
+
+    Noi_dung TEXT NULL,
+
+    Phan_tram_giam DECIMAL(5,2)
+        NOT NULL DEFAULT 0,
+
+    Ngay_bat_dau DATE NULL,
+
+    Ngay_ket_thuc DATE NULL,
+
+    Trang_thai VARCHAR(30)
+        NOT NULL DEFAULT 'Hien thi',
+
+    CONSTRAINT FK_Banner_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang),
+
+    CONSTRAINT CK_Banner_Giam
+        CHECK (Phan_tram_giam BETWEEN 0 AND 100)
+);
+
+
+-- 6. HÌNH ẢNH NHÀ HÀNG
+
+CREATE TABLE HinhAnhNhaHang (
+    ID_hinh_anh INT AUTO_INCREMENT PRIMARY KEY,
+
+    ID_nha_hang INT NOT NULL,
+
+    Duong_dan_anh VARCHAR(500) NOT NULL,
+
+    Mo_ta VARCHAR(255) NULL,
+
+    Thu_tu_hien_thi INT
+        NOT NULL DEFAULT 1,
+
+    CONSTRAINT FK_HinhAnh_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang)
+);
+
+
+-- 7. TIỆN ÍCH
+
+
+CREATE TABLE TienIch (
+    ID_tien_ich INT AUTO_INCREMENT PRIMARY KEY,
+
+    Ten_tien_ich VARCHAR(100) NOT NULL UNIQUE
+);
+
+
+-- 8. NHÀ HÀNG - TIỆN ÍCH
+-- Quan hệ N-N
+
+
+CREATE TABLE NhaHang_TienIch (
+    ID_nha_hang INT NOT NULL,
+
+    ID_tien_ich INT NOT NULL,
+
+    PRIMARY KEY (ID_nha_hang, ID_tien_ich),
+
+    CONSTRAINT FK_NHTI_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang)
+        ON DELETE CASCADE,
+
+    CONSTRAINT FK_NHTI_TienIch
+        FOREIGN KEY (ID_tien_ich)
+        REFERENCES TienIch(ID_tien_ich)
+        ON DELETE CASCADE
+);
+
+
+-- 9. QUY ĐỊNH NHÀ HÀNG
+
+CREATE TABLE QuyDinhNhaHang (
+    ID_quy_dinh INT AUTO_INCREMENT PRIMARY KEY,
+
+    ID_nha_hang INT NOT NULL,
+
+    Noi_dung TEXT NOT NULL,
+
+    Ngay_cap_nhat DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP,
+
+    CONSTRAINT FK_QuyDinh_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang)
+        ON DELETE CASCADE
+);
+
+
+-- 10. KHUNG GIỜ
+
+CREATE TABLE KhungGio (
+    ID_khung_gio INT AUTO_INCREMENT PRIMARY KEY,
+
+    ID_nha_hang INT NOT NULL,
+
+    Gio_bat_dau TIME NOT NULL,
+
+    Gio_ket_thuc TIME NOT NULL,
+
+    Suc_chua_toi_da INT NOT NULL,
+
+    Trang_thai VARCHAR(30)
+        NOT NULL DEFAULT 'Hoat dong',
+
+    CONSTRAINT FK_KhungGio_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang)
+        ON DELETE CASCADE,
+
+    CONSTRAINT CK_KhungGio_SucChua
+        CHECK (Suc_chua_toi_da > 0),
+
+    CONSTRAINT CK_KhungGio_ThoiGian
+        CHECK (Gio_ket_thuc > Gio_bat_dau)
+);
+
+-- 11. ĐẶT BÀN
+
+CREATE TABLE DatBan (
+    ID_dat_ban BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    Ma_dat_ban VARCHAR(30) NOT NULL UNIQUE,
+
+    ID_user INT NOT NULL,
+
+    ID_nha_hang INT NOT NULL,
+
+    ID_khung_gio INT NOT NULL,
+
+    So_nguoi_lon INT NOT NULL,
+
+    So_tre_em INT NOT NULL DEFAULT 0,
+
+    Tong_so_khach INT NOT NULL,
+
+    Ngay_den DATE NOT NULL,
+
+    Gio_den TIME NOT NULL,
+
+    Ghi_chu VARCHAR(500) NULL,
+
+    /*
+        Vòng đời đơn đặt bàn:
+        Dang giu cho
+        Cho nhan ban
+        Nhan ban thanh cong
+        Huy boi khach
+        Huy do qua han
+    */
+    Trang_thai VARCHAR(40)
+        NOT NULL DEFAULT 'Cho nhan ban',
+
+    Thoi_diem_tao DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    Thoi_diem_huy DATETIME NULL,
+
+    Ly_do_huy VARCHAR(200) NULL,
+
+    Thoi_diem_nhan_ban DATETIME NULL,
+
+    CONSTRAINT FK_DatBan_User
+        FOREIGN KEY (ID_user)
+        REFERENCES NguoiDung(ID_user),
+
+    CONSTRAINT FK_DatBan_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang),
+
+    CONSTRAINT FK_DatBan_KhungGio
+        FOREIGN KEY (ID_khung_gio)
+        REFERENCES KhungGio(ID_khung_gio),
+
+    CONSTRAINT CK_DatBan_NguoiLon
+        CHECK (So_nguoi_lon BETWEEN 1 AND 50),
+
+    CONSTRAINT CK_DatBan_TreEm
+        CHECK (So_tre_em BETWEEN 0 AND 50),
+
+    CONSTRAINT CK_DatBan_TongKhach
+        CHECK (Tong_so_khach BETWEEN 1 AND 50),
+
+    CONSTRAINT CK_DatBan_TongHop
+        CHECK (
+            Tong_so_khach =
+            So_nguoi_lon + So_tre_em
+        ),
+
+    CONSTRAINT CK_DatBan_GhiChu
+        CHECK (
+            Ghi_chu IS NULL
+            OR CHAR_LENGTH(Ghi_chu) <= 500
+        )
+);
+
+
+-- 12. ĐÁNH GIÁ
+
+CREATE TABLE DanhGia (
+    ID_danh_gia BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    ID_dat_ban BIGINT NOT NULL UNIQUE,
+
+    ID_user INT NOT NULL,
+
+    ID_nha_hang INT NOT NULL,
+
+    So_sao TINYINT NOT NULL,
+
+    Noi_dung VARCHAR(1000) NOT NULL,
+
+    Ngay_danh_gia DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    Trang_thai VARCHAR(30)
+        NOT NULL DEFAULT 'Hien thi',
+
+    CONSTRAINT FK_DanhGia_DatBan
+        FOREIGN KEY (ID_dat_ban)
+        REFERENCES DatBan(ID_dat_ban),
+
+    CONSTRAINT FK_DanhGia_User
+        FOREIGN KEY (ID_user)
+        REFERENCES NguoiDung(ID_user),
+
+    CONSTRAINT FK_DanhGia_NhaHang
+        FOREIGN KEY (ID_nha_hang)
+        REFERENCES NhaHang(ID_nha_hang),
+
+    CONSTRAINT CK_DanhGia_Sao
+        CHECK (So_sao BETWEEN 1 AND 5),
+
+    CONSTRAINT CK_DanhGia_NoiDung
+        CHECK (
+            CHAR_LENGTH(Noi_dung) BETWEEN 10 AND 1000
+        )
+);
+
+-- 13. THAM SỐ HỆ THỐNG
+
+CREATE TABLE ThamSoHeThong (
+    ID_tham_so INT AUTO_INCREMENT PRIMARY KEY,
+
+    Ten_tham_so VARCHAR(100) NOT NULL UNIQUE,
+
+    Gia_tri VARCHAR(100) NOT NULL,
+
+    Don_vi VARCHAR(30) NULL,
+
+    Mo_ta VARCHAR(255) NULL,
+
+    Ngay_cap_nhat DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ON UPDATE CURRENT_TIMESTAMP
+);
+
+-- 14. API LOG
+
+CREATE TABLE APILog (
+    ID_log BIGINT AUTO_INCREMENT PRIMARY KEY,
+
+    Loai_api VARCHAR(100) NOT NULL,
+
+    Endpoint VARCHAR(500) NOT NULL,
+
+    Phuong_thuc VARCHAR(10) NOT NULL,
+
+    Trang_thai_http INT NULL,
+
+    Noi_dung_yeu_cau LONGTEXT NULL,
+
+    Noi_dung_phan_hoi LONGTEXT NULL,
+
+    Thoi_gian_bat_dau DATETIME
+        NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    Thoi_gian_ket_thuc DATETIME NULL,
+
+    Trang_thai_dong_bo VARCHAR(50) NULL
+);
+
+-- DỮ LIỆU MẪU
+
+-- QUYỀN
+INSERT INTO Quyen (Ten_quyen)
+VALUES
+('Khach hang'),
+('Admin');
+
+-- THAM SỐ HỆ THỐNG
+INSERT INTO ThamSoHeThong
+(Ten_tham_so, Gia_tri, Don_vi, Mo_ta)
+VALUES
+('THOI_GIAN_GIU_CHO', '300', 'giay',
+ 'Thời gian giữ chỗ mặc định 5 phút'),
+
+('THOI_GIAN_GUI_LAI_OTP', '60', 'giay',
+ 'Thời gian chờ gửi lại OTP'),
+
+('GIOI_HAN_OTP_NGAY', '3', 'lan/ngay/SĐT',
+ 'Số lần phát sinh OTP tối đa trong ngày'),
+
+('THOI_GIAN_KHOA_DANG_NHAP', '900', 'giay',
+ 'Thời gian khóa đăng nhập sau khi sai quá 5 lần');
+
+
+-- TIỆN ÍCH
+INSERT INTO TienIch (Ten_tien_ich)
+VALUES
+('Chỗ đậu ô tô'),
+('Điều hòa nhiệt độ'),
+('Phòng VIP'),
+('Wi-Fi');
+
+-- KẾT THÚC
